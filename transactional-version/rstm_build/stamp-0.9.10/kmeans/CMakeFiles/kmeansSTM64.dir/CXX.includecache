@@ -1,0 +1,390 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/alt-license/rand_r_32.h
+stdlib.h
+-
+stm/config.h
+-
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/api/api.hpp
+stm/config.h
+-
+api/cxxtm.hpp
+-
+api/stamp.hpp
+-
+api/library.hpp
+-
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/api/cxxtm.hpp
+common/platform.hpp
+-
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/api/library.hpp
+setjmp.h
+-
+stm/config.h
+-
+common/platform.hpp
+-
+stm/txthread.hpp
+-
+library_inst.hpp
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/api/library_inst.hpp
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/api/library_inst.hpp
+stm/config.h
+-
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/api/stamp.hpp
+setjmp.h
+-
+cstdlib
+-
+cassert
+-
+api/library.hpp
+-
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/common/ThreadLocal.hpp
+stm/config.h
+-
+pthread.h
+-
+cstdlib
+-
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/common/icc-sync.hpp
+cstddef
+-
+stdint.h
+-
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/common/locks.hpp
+common/platform.hpp
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/common/common/platform.hpp
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/common/platform.hpp
+stm/config.h
+-
+stdint.h
+-
+limits.h
+-
+icc-sync.hpp
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/common/icc-sync.hpp
+atomic.h
+-
+unistd.h
+-
+stdio.h
+-
+cstring
+-
+assert.h
+-
+pthread.h
+-
+time.h
+-
+sys/time.h
+-
+mach/mach_time.h
+-
+sched.h
+-
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/stm/BitFilter.hpp
+stm/config.h
+-
+stdint.h
+-
+xmmintrin.h
+-
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/stm/MiniVector.hpp
+cassert
+-
+cstdlib
+-
+string.h
+-
+common/platform.hpp
+-
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/stm/UndoLog.hpp
+stm/config.h
+-
+stm/MiniVector.hpp
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/stm/stm/MiniVector.hpp
+stm/macros.hpp
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/stm/stm/macros.hpp
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/stm/ValueList.hpp
+stm/config.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/stm/stm/config.h
+stm/MiniVector.hpp
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/stm/stm/MiniVector.hpp
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/stm/WBMMPolicy.hpp
+stdlib.h
+-
+stm/config.h
+-
+stm/MiniVector.hpp
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/stm/stm/MiniVector.hpp
+stm/metadata.hpp
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/stm/stm/metadata.hpp
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/stm/WriteSet.hpp
+stm/config.h
+-
+string.h
+-
+stdlib.h
+-
+cstdlib
+-
+cstring
+-
+cassert
+-
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/stm/macros.hpp
+stm/config.h
+-
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/stm/metadata.hpp
+stm/config.h
+-
+stm/MiniVector.hpp
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/stm/stm/MiniVector.hpp
+stm/BitFilter.hpp
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/stm/stm/BitFilter.hpp
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/stm/txthread.hpp
+alt-license/rand_r_32.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/stm/alt-license/rand_r_32.h
+common/locks.hpp
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/stm/common/locks.hpp
+common/ThreadLocal.hpp
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/stm/common/ThreadLocal.hpp
+stm/metadata.hpp
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/stm/stm/metadata.hpp
+stm/WriteSet.hpp
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/stm/stm/WriteSet.hpp
+stm/UndoLog.hpp
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/stm/stm/UndoLog.hpp
+stm/ValueList.hpp
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/stm/stm/ValueList.hpp
+WBMMPolicy.hpp
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/stm/WBMMPolicy.hpp
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/cluster.c
+assert.h
+-
+float.h
+-
+math.h
+-
+stdio.h
+-
+stdlib.h
+-
+string.h
+-
+common.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/common.h
+cluster.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/cluster.h
+normal.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/normal.h
+random.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/random.h
+util.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/util.h
+tm.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/tm.h
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/cluster.h
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/common.c
+common.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/common.h
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/common.h
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/kmeans.c
+assert.h
+-
+fcntl.h
+-
+getopt.h
+-
+math.h
+-
+stdio.h
+-
+stdlib.h
+-
+string.h
+-
+sys/stat.h
+-
+sys/types.h
+-
+unistd.h
+-
+cluster.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/cluster.h
+common.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/common.h
+thread.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/thread.h
+tm.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/tm.h
+util.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/util.h
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/normal.c
+assert.h
+-
+stdio.h
+-
+stdlib.h
+-
+float.h
+-
+math.h
+-
+common.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/common.h
+normal.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/normal.h
+random.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/random.h
+thread.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/thread.h
+timer.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/timer.h
+tm.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/tm.h
+util.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/util.h
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/normal.h
+random.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/random.h
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/kmeans/util.h
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/memory.h
+stddef.h
+-
+types.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/types.h
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/mt19937ar.c
+mt19937ar.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/mt19937ar.h
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/mt19937ar.h
+stdio.h
+-
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/random.c
+stdlib.h
+-
+mt19937ar.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/mt19937ar.h
+random.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/random.h
+tm.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/tm.h
+stdio.h
+-
+assert.h
+-
+mt19937ar.c
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/mt19937ar.c
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/random.h
+mt19937ar.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/mt19937ar.h
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/thread.c
+assert.h
+-
+stdlib.h
+-
+thread.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/thread.h
+types.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/types.h
+stdio.h
+-
+unistd.h
+-
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/thread.h
+pthread.h
+-
+stdlib.h
+-
+types.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/types.h
+omp.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/omp.h
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/timer.h
+sys/time.h
+-
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/tm.h
+STAMP_config.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/STAMP_config.h
+simapi.h
+-
+memory.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/memory.h
+stdio.h
+-
+assert.h
+-
+tmapi.h
+-
+memory.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/memory.h
+thread.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/thread.h
+types.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/types.h
+string.h
+-
+api/api.hpp
+-
+thread.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/thread.h
+omp.h
+-
+tl2.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/tl2.h
+itm.h
+-
+assert.h
+-
+thread.h
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/thread.h
+
+/home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/stamp-0.9.10/lib/types.h
+
+include/stm/config.h
+
+stamp-0.9.10/STAMP_config.h
+

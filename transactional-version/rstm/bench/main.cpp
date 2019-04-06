@@ -1,10 +1,50 @@
-//g++ *.cpp -lpthread -std=c++11-lpthread
+#include <cstdlib>
+#include <iostream>
+#include <signal.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <api/api.hpp>
+#include <common/platform.hpp>
+#include <common/locks.hpp>
+#include "bmconfig.hpp"
+#include "../include/api/api.hpp"
+
+
+
 
 #include <time.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <mutex>
 #include <thread>
+
+
+
+using namespace std;
+
+const int THREAD_COUNT = 4;
+const int NUM_TRANSACTIONS = 100000;
+
+// shared variable that will be incremented by transactions
+int x = 0;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #define SILENT
 
@@ -139,17 +179,21 @@ public:
           //  node->m_mutex.lock();
              //printf("adding inside add before mutex \n");
              //fflush(stdout);
-           synchronized(node->m_mutex) {
+            TM_BEGIN(atomic) {
+//synchronized(node->m_mutex) {
 
-                if (node->marked || (leftLast && node->left != NULL) || (!leftLast && node->right != NULL)) {
-                    node->m_mutex.unlock();
+                if ( TM_READ(node->marked) || (leftLast &&  TM_READ(node->left) != NULL) || (!leftLast && node->right != NULL)) {
+                    //node->m_mutex.unlock();
+                    stm::restart();
                     continue;
                 }
                 PaVTNode* upperNode = leftLast? (PaVTNode*) node->leftSnapshot : (PaVTNode*) node->rightSnapshot;
                 if ((leftLast && (val <= upperNode->value)) ||
                         (!leftLast && (val >= upperNode->value)
                                 )) {
-                    node->m_mutex.unlock();
+                    
+                    stm::restart();
+                    //node->m_mutex.unlock();
                     continue;
                 }
                 PaVTNode* newNode = new PaVTNode(val, node, val > node->value ? node : upperNode, res > 0? upperNode : node);
@@ -166,7 +210,9 @@ public:
                 node->left = newNode;
                 node->m_mutex.unlock();
                 return invalidNumber;
-           }
+
+           }TM_END;
+
          //   node->m_mutex.unlock();
         }
     }
@@ -637,6 +683,9 @@ public:
     }
     void adder(PaVTBST* tree ,int* array, int begin, int end){
         // printf("%d, %d\n", begin, end);
+    
+        // init thread for rstm
+        TM_THREAD_INIT();
 
         while(begin < end) {
             printlocked("adding\n");
@@ -705,7 +754,109 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Config::Config() :
+    bmname(""),
+    duration(1),
+    execute(0),
+    threads(THREAD_COUNT),
+    nops_after_tx(0),
+    elements(256),
+    lookpct(34),
+    inspct(66),
+    sets(1),
+    ops(1),
+    time(0),
+    running(true),
+    txcount(0)
+{
+}
+
+Config CFG TM_ALIGN(64);
+
+/*
+void* run_thread(void* i) {
+    // each thread must be initialized before running transactions
+    TM_THREAD_INIT();
+
+    for(int i=0; i<NUM_TRANSACTIONS; i++) {
+        // mark the beginning of a transaction
+        TM_BEGIN(atomic)
+        {
+            // add this memory location to the read set
+            int z = TM_READ(x);
+            // add this memory location to the write set
+            TM_WRITE(x, z+1);
+        }
+        TM_END; // mark the end of the transaction
+    }
+
+    TM_THREAD_SHUTDOWN();
+}
+
+*/
+/*
+int main(int argc, char** argv) {
+    printf("hello world\n");
+    TM_SYS_INIT();
+
+    // original thread must be initalized also
+    TM_THREAD_INIT();
+
+    void* args[256];
+    pthread_t tid[256];
+
+    // set up configuration structs for the threads we'll create
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
+    for (uint32_t i = 0; i < CFG.threads; i++)
+        args[i] = (void*)i;
+
+    // actually create the threads
+    for (uint32_t j = 1; j < CFG.threads; j++)
+        pthread_create(&tid[j], &attr, &run_thread, args[j]);
+
+    // all of the other threads should be queued up, waiting to run the
+    // benchmark, but they can't until this thread starts the benchmark
+    // too...
+    run_thread(args[0]);
+
+    // everyone should be done.  Join all threads so we don't leave anything
+    // hanging around
+    for (uint32_t k = 1; k < CFG.threads; k++)
+        pthread_join(tid[k], NULL);
+
+    // And call sys shutdown stuff
+    TM_SYS_SHUTDOWN();
+
+    printf("x = %d\n", x); // x should equal (THREAD_COUNT * NUM_TRANSACTIONS)
+
+    return 0;
+}*/
+
 int main(int agrc, char**argv){
+    TM_SYS_INIT();
+
+    // original thread must be initalized also
+    TM_THREAD_INIT();
 
     int i = 10;
 
@@ -714,31 +865,9 @@ int main(int agrc, char**argv){
         printf("Test with %d threads - %d\n", i, elements );
         TestCase test = TestCase(elements,i);
         test.run();
-       // delete test;
 
-    i++;
+        i++;
     }
-    /*
-    int array [] = {4,9,12,3,2,1,-10,18,59,43,7,14};
-    PaVTBST tree = PaVTBST(-98,5555);
-    for(int i= 0; i<12 ; i++){
-        tree.add(array[i]);
-    }
-
-
-    tree.inorderPrint();
-
-    for(int i= 0; i<12 ; i++){
-       // tree.remove(array[i]);
-        //printf("Removing %d ", array[i] );
-        //tree.inorderPrint();
-    }
-
-
-    tree.inorderPrint();
-
-
-*/
 
     return 0;
 }

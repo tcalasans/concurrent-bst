@@ -1,0 +1,3 @@
+cd rstm_build
+make
+./bench/mainSSB64

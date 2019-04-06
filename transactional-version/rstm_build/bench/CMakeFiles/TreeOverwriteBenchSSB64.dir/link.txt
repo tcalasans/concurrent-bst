@@ -1,0 +1,1 @@
+g++    -Wall -msse2 -mfpmath=sse -march=core2 -mtune=core2 -std=c++11 -lpthread  -O3 -g   -m64 CMakeFiles/TreeOverwriteBenchSSB64.dir/TreeOverwriteBench.cpp.o  -o TreeOverwriteBenchSSB64 -rdynamic ../libstm/libstm64.a -lpthread -lrt 
