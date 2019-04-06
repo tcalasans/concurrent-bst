@@ -1,4 +1,4 @@
-//g++ *.cpp -lpthread -std=c++11-lpthread
+//g++ *.cpp -std=c++11-lpthread
 
 #include <time.h>
 #include <stdlib.h>
