@@ -335,6 +335,9 @@ void btree::add(int key)
                         break;
                     }
                 }
+                else {
+                    break;
+                }
 
             }   
         }
@@ -415,11 +418,11 @@ class TestCase
         int arg; // value to be added or removed
     };
 
-    list<op> *createOpList(int numOperations) {
-        list<op> *newList = new list<op>();
+    list<op*> *createOpList(int numOperations) {
+        list<op*> *newList = new list<op*>();
 
         for (int i = 0; i < numOperations; i++) {
-            newList->push_back(*createOpRandomly());
+            newList->push_back(createOpRandomly());
         }
 
         return newList;
@@ -465,7 +468,7 @@ class TestCase
         thread workers[nThreads];
         int size = n / nThreads;
         
-        list<op>* opList[nThreads];
+        list<op*>* opList[nThreads];
         for(int i =0 ;i < nThreads; i++) {
             opList[i] = createOpList(size);
         }
@@ -477,7 +480,7 @@ class TestCase
         for(int i = 0; i < nThreads; i++) {
             workers[i].join();
         }
-
+        printf("Tree size: %d\n", tree->size());
     }
     // ~TestCase(){
     //     tree->deleteNodes();
@@ -526,23 +529,23 @@ class TestCase
 
         printf("\n");
     }
-    void work(btree *tree, list<op> *listOps) {
+    void work(btree *tree, list<op*> *listOps) {
         //printList(listOps);
         
         TM_THREAD_INIT();
-        for(list<op>::iterator it = listOps->begin(); it != listOps->end(); ++it ) {
+        for(list<op*>::iterator it = listOps->begin(); it != listOps->end(); ++it ) {
             //printf("%p tree \n", tree);
             //printf("%c - %d, ", it->type, it->arg);
-
-            if (it->type == 'A') {
-                tree->add(it->arg);
+            op *operaton = *it;
+            if (operaton->type == 'A') {
+                tree->add(operaton->arg);
  
             }
-            else if (it->type == 'R') {
-                //tree->remove(it->arg); 
+            else if (operaton->type == 'R') {
+                tree->remove(operaton->arg); 
             }
             else { //contains
-                //tree->contains(it->arg);
+                tree->contains(operaton->arg);
             }
         }
         TM_THREAD_SHUTDOWN();
@@ -560,7 +563,7 @@ class TestCase
         {
             printlocked("adding\n");
             tree->add(array[begin]);
-
+            //tree->add(5);
             begin++;
         }
         TM_THREAD_SHUTDOWN();
@@ -574,10 +577,11 @@ class TestCase
         {
 
             printlocked("removing\n");
-            
-            while(!tree->remove(array[begin]))
-                ;//printf("trying to remove %d \n", array[begin]);
-            
+            int maxRetry = 5;
+            while(!tree->remove(array[begin]) && maxRetry >= 0) {
+                --maxRetry;//printf("trying to remove %d \n", array[begin]);
+                sleep_ms(2*(1 + 5-maxRetry));
+            }
 
             //tree->remove(array[begin]);
             begin++;
@@ -636,7 +640,8 @@ void* run_thread(void* i) {
 
     for(int i=0; i<NUM_TRANSACTIONS; i++) {
         // mark the beginning of a transaction
-        TM_BEGIN(atomic)
+        TM_BEGIN(atomic)run2
+        
         {
             // add this memory location to the read set
             int z = TM_READ(x);
@@ -703,7 +708,7 @@ int main(int agrc, char **argv)
 
     //while (i <= 64)
     //{
-        int elements = 1000;
+        int elements = 1000000;
         printf("Test with %d threads - %d\n", nThreads, elements);
         TestCase test = TestCase(elements, nThreads, 25, 25, 50);
         test.run2();
