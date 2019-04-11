@@ -41,6 +41,10 @@ bmconfig.hpp
 /home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/bench/bmconfig.hpp
 ../include/api/api.hpp
 /home/titocal/Documents/school work/2019 SPRINGS/MUlticore/research-project/concurrent-bst/transactional-version/rstm/include/api/api.hpp
+list
+-
+iterator
+-
 time.h
 -
 stdlib.h

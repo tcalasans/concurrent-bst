@@ -10,6 +10,8 @@
 #include "../include/api/api.hpp"
 
 
+#include <list> 
+#include <iterator> 
 
 
 #include <time.h>
@@ -19,777 +21,613 @@
 #include <thread>
 
 
+#define SILENT
+
+
+
+#define synchronized(m) \
+    m.lock();           \
+    for (int ___ct = 0; ___ct++ < 1; m.unlock())
 
 using namespace std;
 
+
+
 const int THREAD_COUNT = 4;
-const int NUM_TRANSACTIONS = 100000;
+
+
+
+Config::Config() : bmname(""),
+                   duration(1),
+                   execute(2),
+                   threads(THREAD_COUNT),
+                   nops_after_tx(0),
+                   elements(1000),
+                   lookpct(50),
+                   inspct(50),
+                   sets(10),
+                   ops(1),
+                   time(0),
+                   running(true),
+                   txcount()
+{
+}
+
+Config CFG TM_ALIGN(64);
+
 
 // shared variable that will be incremented by transactions
 int x = 0;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define SILENT
-
-
-#define synchronized(m) \
-    m.lock(); for(int ___ct=0 ; ___ct++<1 ; m.unlock() )
-using namespace std;
-
-
 mutex printlock;
 
-
- void printlocked(const char* s){
-    #ifndef SILENT
+void printlocked(const char *s)
+{
+#ifndef SILENT
     printf("one is defined ");
     printlock.lock();
     printf(s);
     printlock.unlock();
-    #endif
+#endif
+}
 
+using namespace std;
+
+struct node
+{
+    int key_value;
+    node *left;
+    node *right;
+};
+
+class btree
+{
+  public:
+    btree();
+    ~btree();
+
+    bool contains(int key);
+    void add(int key);
+    node *search(int key);
+    void destroy_tree();
+
+    int size()
+    {
+        return size(this->root);
+    }
+    int size(node *n)
+    {
+
+        if (n == NULL)
+            return 0;
+        return 1 + size(n->left) + size(n->right);
     }
 
+    void inorderPrintRec(node *root)
+    {
 
-
- class PaVTNode{
-
-    public:
-
-        int value;
-        //public final Object item;
-        volatile PaVTNode* leftSnapshot = NULL;
-        volatile PaVTNode* rightSnapshot = NULL;
-
-        volatile bool marked = false;
-
-         PaVTNode* parent = NULL;
-         volatile PaVTNode* right=NULL;
-         volatile PaVTNode* left=NULL;
-
-
-
-
-         recursive_mutex m_mutex;
-
-
-
-
-        PaVTNode(int val) {
-            value = val;
-            //this.item = item;
-            //this.marked = false;
-        }
-
-       PaVTNode(int val, PaVTNode* parent,
-                PaVTNode* leftSnapshot, PaVTNode* rightSnapshot) {
-            value = val;
-            this->parent = parent;
-            this->leftSnapshot = leftSnapshot;
-            this->rightSnapshot = rightSnapshot;
-        }
-
-/*
-        String toString() {
-            String delimiter = "  ";
-            //StringBuilder sb = new StringBuilder();
-            return sb.append(value + (marked? "(marked)" : "") + delimiter).toString();
-        }
-*/
-    };//PaVTNode
-
-
-
-
-class PaVTBST {
-
-
-private:
-    PaVTNode* rightSentinel;
-    PaVTNode* leftSentinel;
-
-
-
-public:
-        int invalidNumber;
-    PaVTNode* root;
-
-
-    PaVTBST(int min, int max) {
-        invalidNumber=min-1;
-        this->rightSentinel = new PaVTNode(min);
-        this->leftSentinel = new PaVTNode(max);
-
-
-        this->leftSentinel->parent = rightSentinel;
-        this->rightSentinel->right = leftSentinel;
-        this->leftSentinel->leftSnapshot = rightSentinel;
-        this->rightSentinel->rightSnapshot = leftSentinel;
-        this->root = leftSentinel;
-    }
-
-
-
-    int add(int val) {
-        //printf("adding inside add 1 \n");
-        //fflush(stdout);
-        while (true) {
-             PaVTNode* node = root;
-             PaVTNode* child = NULL;
-             int res = -1;
-            while (true) {
-                if (val == node->value){
-                    res = 0;
-                    break;
-                }
-                if (val < node->value) {
-                    res = -1;
-                    child = (PaVTNode*) node->left;
-                } else {
-                    res = 1;
-                    child = (PaVTNode*) node->right;
-                }
-                if (child == NULL) {
-                    break;
-                }
-                node = child;
-
-            }
-            if (val == node->value) {
-                return val;
-            }
-            bool leftLast = val < node->value ;
-          //  node->m_mutex.lock();
-             //printf("adding inside add before mutex \n");
-             //fflush(stdout);
-            TM_BEGIN(atomic) {
-//synchronized(node->m_mutex) {
-
-                if ( TM_READ(node->marked) || (leftLast &&  TM_READ(node->left) != NULL) || (!leftLast && node->right != NULL)) {
-                    //node->m_mutex.unlock();
-                    stm::restart();
-                    continue;
-                }
-                PaVTNode* upperNode = leftLast? (PaVTNode*) node->leftSnapshot : (PaVTNode*) node->rightSnapshot;
-                if ((leftLast && (val <= upperNode->value)) ||
-                        (!leftLast && (val >= upperNode->value)
-                                )) {
-                    
-                    stm::restart();
-                    //node->m_mutex.unlock();
-                    continue;
-                }
-                PaVTNode* newNode = new PaVTNode(val, node, val > node->value ? node : upperNode, res > 0? upperNode : node);
-
-                if (!leftLast) {
-                    upperNode->leftSnapshot = newNode;
-                    node->rightSnapshot = newNode;
-                    node->right = newNode;
-                    node->m_mutex.unlock();
-                    return invalidNumber;
-                }
-                upperNode->rightSnapshot = newNode;
-                node->leftSnapshot = newNode;
-                node->left = newNode;
-                node->m_mutex.unlock();
-                return invalidNumber;
-
-           }TM_END;
-
-         //   node->m_mutex.unlock();
-        }
-    }
-
-
-    void inorderPrint(){
-
-        if(this->root->left==NULL){
-          printf("[ empty ] \n");
-        }
-        inorderPrintRec( (PaVTNode*) this->root->left);
-        printf("\n" );
-
-
-    }
-
-
-
-    void inorderPrintRec(PaVTNode* root){
-
-        if(root==NULL) {
+        if (root == NULL)
+        {
 
             return;
         }
-        inorderPrintRec((PaVTNode*) root->left);
-        printf("%d ",root->value);
-        inorderPrintRec((PaVTNode*) root->right);
-
-
-
+        inorderPrintRec(root->left);
+        printf("%d ", root->key_value);
+        inorderPrintRec(root->right);
     }
 
+    void inorderPrint()
+    {
 
+        if (this->root == NULL)
+        {
+            printf("[ empty ] \n");
+        }
+        inorderPrintRec(this->root);
+        printf("\n");
+    }
 
+    bool remove(int key)
+    {
 
+        TM_BEGIN(atomic) {
 
-    int remove(int val) {
+            // printf("calling remove");
+            node *current = TM_READ(this->root);
+            node *prev = NULL;
+            bool leftLast = false;       
+            while(true) {
 
-        while (true) {
-            PaVTNode* node = root;
-            PaVTNode* leftNode = leftSentinel;
-            PaVTNode* rightNode = rightSentinel;
-            PaVTNode* child = NULL;
-            int res = -1;
-            while (true) {
-                if (val == node->value){
-                    res = 0;
-                    break;
+                if (current == NULL) {
+                    stm::commit(tx);
+                    return false;
                 }
-                if (val < node->value){
-                    leftNode = node;
-                    child = (PaVTNode*) node->left;
-                    res = -1;
-                } else {
-                    rightNode = node;
-                    child = (PaVTNode*) node->right;
-                    res = 1;
-                }
-                if (child == NULL) {
-                    break;
-                }
-                node = child;
-            }
-            if (res != 0) {
-                bool leftLast = res < 0;
-                PaVTNode* ref = leftLast? (PaVTNode*) node->leftSnapshot: (PaVTNode*) node->rightSnapshot;
-                if (
-                        ( leftLast && val <= ref->value ) ||
-                        ( !leftLast && val >= ref->value ) ) {
+
+                if (key < TM_READ(current->key_value)) { 
+                    prev = current;
+                    current = TM_READ(current->left);
+                    leftLast = true;
                     continue;
                 }
-                return this->invalidNumber;
-            }
-            PaVTNode* parent = node->parent;
-
-            printlocked("Acquiring parent lock \n");
-
-            parent->m_mutex.lock();
-            printlocked("parent lock acquired \n");
-                if (node->parent != parent) {
-                    if (node->marked) return this->invalidNumber;
-                    parent->m_mutex.unlock();
+                if (key > TM_READ(current->key_value)) { 
+                    prev = current;
+                    current = TM_READ(current->right);
+                    leftLast = false;
                     continue;
                 }
-
-                printlocked("Acquiring node lock \n ");
-
-                node->m_mutex.lock();
-                printlocked("node lock acquired \n");
-                    if (node->marked) {
-
-                        //unlock
-                        parent->m_mutex.unlock();
-                        node->m_mutex.unlock();
-
-
-                        return this->invalidNumber;
+                
+                // KEY FOUND
+                //no child case
+                if (TM_READ(current->left) == NULL && TM_READ(current->right) == NULL)
+                {
+                    if (prev == NULL) {
+                        // SOLE ROOT TO BE DELETED
+                        TM_WRITE(this->root, (node*)NULL);
+                        break;
+                
                     }
-                    PaVTNode* left = (PaVTNode*) node->left;
-                    PaVTNode* right = (PaVTNode*)  node->right;
-                    bool leftChild = parent->left == node;
-                    if (left == NULL && right == NULL) {
-                        rightNode = (PaVTNode*) node->leftSnapshot;
-                        leftNode = (PaVTNode*) node->rightSnapshot;
-                        node->marked = true;
-                        if (leftChild) {
-                            parent->left = NULL;
-                            parent->leftSnapshot = (PaVTNode*)  rightNode;
-                            rightNode->rightSnapshot = (PaVTNode*)  parent;
-                        } else {
-                            parent->right = NULL;
-                            parent->rightSnapshot = (PaVTNode*)  leftNode;
-                            leftNode->leftSnapshot = (PaVTNode*)  parent;
-                        }
-                    } else if (left == NULL || right == NULL) {
-                        child = left == NULL? (PaVTNode*) right : (PaVTNode*)  left;
-                        rightNode = (PaVTNode*) node->leftSnapshot;
-                        leftNode = (PaVTNode*)  node->rightSnapshot;
-                      //  synchronized(child) {
-
-                        printlocked("Acquiring child lock \n ");
-
-                        child->m_mutex.lock();
-                            PaVTNode* snapshotToLock = left == NULL? (PaVTNode*)  leftNode : (PaVTNode*) rightNode;
-                            //synchronized(snapshotToLock) {
-
-                            printlocked("Acquiring snapshotToLock lock \n ");
-
-                            snapshotToLock->m_mutex.lock();
-                                if ((left == NULL && snapshotToLock->leftSnapshot != node) ||
-                                        (left != NULL && snapshotToLock->rightSnapshot != node) ||
-                                        snapshotToLock->marked) {
-                                        //UNLOCKING
-
-                                        snapshotToLock->m_mutex.unlock();
-                                        child->m_mutex.unlock();
-                                        node->m_mutex.unlock();
-                                        parent->m_mutex.unlock();
-
-
-                                        continue;
-                                }
-                                node->marked = true;
-                                child = left == NULL? right : left;
-                                if (leftChild) {
-                                    parent->left = (PaVTNode*)  child;
-                                } else {
-                                    parent->right = (PaVTNode*)  child;
-                                }
-                                child->parent = (PaVTNode*) parent;
-                                rightNode->rightSnapshot = (PaVTNode*)  leftNode;
-                                leftNode->leftSnapshot = (PaVTNode*)  rightNode;
-                            snapshotToLock->m_mutex.unlock();
-                            //} syn snapshotToLock
-                        child->m_mutex.unlock();
-                        //}// syn child
-                    } else {
-                       // synchronized(left) {
-                            left->m_mutex.lock();
-                            //synchronized(right) {
-                                right->m_mutex.lock();
-                                rightNode = (PaVTNode*) node->leftSnapshot;
-                                leftNode = (PaVTNode*) node->rightSnapshot;
-                               // synchronized(rightNode) {
-                                    rightNode->m_mutex.lock();
-                                    if (rightNode->rightSnapshot != node || rightNode->marked){
-
-
-                                        rightNode->m_mutex.unlock();
-                                        right->m_mutex.unlock();
-                                        left->m_mutex.unlock();
-                                        node->m_mutex.unlock();
-                                        parent->m_mutex.unlock();
-
-
-
-
-                                        continue;
-                                    }
-                                    if (right->left == NULL) {
-                                        node->marked = true;
-                                        right->left = (PaVTNode*) left;
-                                        left->parent = (PaVTNode*) right;
-                                        right->parent = (PaVTNode*) parent;
-                                        if (leftChild) {
-                                            parent->left = (PaVTNode*) right;
-                                        } else {
-                                            parent->right = (PaVTNode*) right;
-                                        }
-                                        rightNode->rightSnapshot = (PaVTNode*) leftNode;
-                                        leftNode->leftSnapshot = (PaVTNode*) rightNode;
-                                    } else {
-                                        PaVTNode* succ = (PaVTNode*) leftNode;
-                                        PaVTNode* succParent = (PaVTNode*) succ->parent;
-                                        //synchronized(succParent) {
-                                        succParent->m_mutex.lock();
-                                            if (leftNode->parent != succParent || leftNode->marked){
-
-
-                                                succParent->m_mutex.unlock();
-                                                rightNode->m_mutex.unlock();
-                                                right->m_mutex.unlock();
-                                                left->m_mutex.unlock();
-                                                node->m_mutex.unlock();
-                                                parent->m_mutex.unlock();
-
-
-
-
-                                                continue;
-                                            }
-                                            //synchronized(leftNode) {
-                                             leftNode->m_mutex.lock();
-                                                if (leftNode->leftSnapshot != node || leftNode->marked){
-
-                                                leftNode->m_mutex.unlock();
-                                                succParent->m_mutex.unlock();
-                                                rightNode->m_mutex.unlock();
-                                                right->m_mutex.unlock();
-                                                left->m_mutex.unlock();
-                                                node->m_mutex.unlock();
-                                                parent->m_mutex.unlock();
-
-
-
-
-
-                                                continue;
-                                            }
-                                                PaVTNode* succRight = (PaVTNode*) succ->right;
-                                                if (succRight != NULL ) {
-                                                   // synchronized(succRight) {
-                                                    succRight->m_mutex.lock();
-                                                        PaVTNode* succRightSnapshot = (PaVTNode*) succ->rightSnapshot;
-                                                        if (succRightSnapshot != succRight) {
-                                                            //synchronized(succRightSnapshot) {
-                                                            succRightSnapshot->m_mutex.lock();
-                                                                if (succRightSnapshot->leftSnapshot != succ || succRightSnapshot->marked) {
-
-
-
-                                                                        succRightSnapshot->m_mutex.unlock();
-                                                                        succRight->m_mutex.unlock();
-                                                                        leftNode->m_mutex.unlock();
-                                                                        succParent->m_mutex.unlock();
-                                                                        rightNode->m_mutex.unlock();
-                                                                        right->m_mutex.unlock();
-                                                                        left->m_mutex.unlock();
-                                                                        node->m_mutex.unlock();
-                                                                        parent->m_mutex.unlock();
-
-
-
-                                                                        continue;
-                                                                     }
-                                                                applyRemove(rightNode, node, parent, left, right,
-                                                                        leftChild, succ, succParent, succRight, succRightSnapshot);
-                                                                succRightSnapshot->m_mutex.unlock();
-                                                           // } syn succRightSnapshot
-                                                        } else {
-                                                            applyRemove(rightNode, node, parent, left, right,
-                                                                    leftChild, succ, succParent, succRight, succRightSnapshot);
-                                                        }
-                                                    succRight->m_mutex.unlock();
-                                                    //} syn succcRight
-                                                 } else {
-                                                    PaVTNode* succRightSnapshot = (PaVTNode*) succ->rightSnapshot;
-                                                    applyRemove(rightNode, node, parent, left, right,
-                                                            leftChild, succ, succParent, succRight, succRightSnapshot);
-                                                }
-                                                leftNode->m_mutex.unlock();
-                                            //} syn leftNode
-                                        succParent->m_mutex.unlock();
-                                       // } syn succParent
-                                    }
-                                    rightNode->m_mutex.unlock();
-                                //} syn rightNode
-                                right->m_mutex.unlock();
-                            // syn right}
-                            left->m_mutex.unlock();
-                        // } syn left
+                    else {
+                        if(leftLast) TM_WRITE(prev->left, (node*)NULL);
+                        else TM_WRITE(prev->right, (node*)NULL);
+                        break;
                     }
-                    node->m_mutex.unlock();
-                //}// syn second
-                parent->m_mutex.unlock();
-            //}//syn first
-            return  node->value;
-        }
-    }
+                }
 
+                //one child case
+                if (TM_READ(current->left) == NULL)
+                {
+                    if (prev == NULL) {
+                        TM_WRITE(this->root, this->root->right);
+                        break;
+                    }
+                    else {
+                        if(leftLast) TM_WRITE(prev->left, current->right);
+                        else TM_WRITE(prev->right, current->right);
+                        break;
+                    };
+                }
 
+                //one child case
+                if (TM_READ(current->right) == NULL)
+                {
+                    if (prev == NULL) {
+                        TM_WRITE(this->root, this->root->left);
+                        break;
+                    }
+                    else {
+                        if(leftLast) TM_WRITE(prev->left, current->left);
+                        else TM_WRITE(prev->right, current->left);
+                        break;
+                    };
+                }
 
-    void applyRemove(PaVTNode* rightNode,
-            PaVTNode* node,
-            PaVTNode* parent,
-            PaVTNode* left,
-            PaVTNode* right, bool leftChild,
-            PaVTNode* succ,
-            PaVTNode* succParent,
-            PaVTNode* succRight,
-            PaVTNode* succRightSnapshot) {
-        node->marked = true;
-        succ->right = right;
-        right->parent = succ;
-        succ->left = left;
-        left->parent = succ;
-        succ->parent = parent;
-        if (leftChild) {
-            parent->left = succ;
-        } else {
-            parent->right = succ;
-        }
-        succParent->left = succRight;
-        succ->rightSnapshot = succRightSnapshot;
-        succRightSnapshot->leftSnapshot = succ;
-        if (succRight != NULL) {
-            succRight->parent = succParent;
-        }
-        succ->leftSnapshot = rightNode;
-        rightNode->rightSnapshot = succ;
-    }
+                
 
-
-
-    void deleteNodes(){
-        deleteNodes(this->root->left);
-    }
-    void deleteNodes(volatile PaVTNode* root){
-        if(root == NULL) return;
-        deleteNodes(root->left);
-        deleteNodes(root->right);
-        delete root;
-    }
-
-    bool contains(int val) {
-
-        while (true) {
-            PaVTNode* node = root;
-            PaVTNode* child = NULL;
-            int res = -1;
-            while (true) {
-                if (val == node->value){
-                    res = 0;
+                //two child removal case 1
+                if (TM_READ(current->right->left) == NULL)
+                {
+                    //printf("case1");
+                    TM_WRITE(current->key_value, current->right->key_value);
+                    TM_WRITE(current->right, current->right->right);
                     break;
                 }
-                if (val < node->value) {
-                    child = (PaVTNode*) node->left;
-                    res = -1;
-                } else {
-                    child = (PaVTNode*) node->right;
-                    res = 1;
-                }
-                if (child == NULL) {
-                    break;
-                }
-                node = child;
 
+                //two child removal case 2
+                //printf("case2");
+                node *parent = TM_READ(current->right);
+                node *child = TM_READ(current->right->left);
+
+                while (TM_READ(child->left) != NULL)
+                {
+                    //printf("case2");
+                    parent = child;
+                    child = TM_READ(child->left);
+                }
+
+                //printf("Cambio puntatori\n");
+                TM_WRITE(current->key_value, child->key_value);
+                //printf("Faccio puntare %d  ", parent->left->key_value);
+                //printf("%d",child->right->key_value);
+                TM_WRITE(parent->left, child->right);
+                break;
             }
-            if (res == 0) {
+        }
+        TM_END;
+
+        return true;
+    }
+
+  private:
+    void destroy_tree(node *leaf);
+    void add(int key, node *leaf);
+    node *search(int key, node *leaf);
+
+    node *root;
+};
+
+btree::btree()
+{
+    root = NULL;
+}
+
+btree::~btree()
+{
+    //destroy_tree();
+}
+
+void btree::destroy_tree()
+{
+    //destroy_tree(root);
+}
+
+bool btree::contains(int key) {
+    TM_BEGIN(atomic) {
+        node *current = TM_READ(this->root);
+        
+        while(current != NULL) {
+            int curVal = TM_READ(current->key_value); 
+            
+            if (key == curVal) {
+                stm::commit(tx);
                 return true;
             }
-            PaVTNode* upperNode = res < 0? (PaVTNode*) node->leftSnapshot : (PaVTNode*) node->rightSnapshot;
-
-            if (
-                    (res < 0 && val <= upperNode->value ) ||
-                    (res > 0 && val >= upperNode->value )
-                    ) {
-                continue;
+            else if (key < curVal) {
+                current = TM_READ(current->left);
             }
+            else {
+                current = TM_READ(current->right);
+            }
+        }
 
-            return false;
+    }
+    TM_END;
+
+    return false;
+}
+
+void btree::add(int key)
+{
+
+    TM_BEGIN(atomic) {
+        // if tree is empty
+        if(TM_READ(this->root) == NULL) {
+            node *newNode = new node;
+            newNode->key_value = key;
+            newNode->left = NULL;
+            newNode->right = NULL;
+            
+            TM_WRITE(this->root, newNode);
+        }
+        else {
+            node *current = TM_READ(this->root);
+            while(true) {
+                if (key < TM_READ(current->key_value))
+                {
+                    if (TM_READ(current->left) != NULL) {
+                        current = TM_READ(current->left);
+                        continue;
+                    }
+                    else
+                    {
+                        node *newNode = new node;
+                        newNode->key_value = key;
+                        newNode->left = NULL;
+                        newNode->right = NULL;
+                        
+                        TM_WRITE(current->left, newNode);
+                        break;
+                    }
+                }
+                else if (key > TM_READ(current->key_value))
+                {
+                    if (current->right != NULL) {
+                        current = TM_READ(current->right);
+                        continue;
+                    }
+                    else
+                    {
+                        node *newNode = new node;
+                        newNode->key_value = key;
+                        newNode->left = NULL;
+                        newNode->right = NULL;
+                        
+                        TM_WRITE(current->right, newNode);
+                        break;
+                    }
+                }
+
+            }   
+        }
+    }TM_END;
+}
+/*
+void btree::add(int key)
+{
+    // TM_BEGIN(atomic) {
+    //     if (root != NULL)
+    //         add(key, root);
+    //     else
+    //     {
+    //         root = new node;
+    //         root->key_value = key;
+    //         root->left = NULL;
+    //         root->right = NULL;
+    //     }
+    // }
+    // TM_END;
+    bool firstNode = false;
+    TM_BEGIN(atomic) {
+        if(TM_READ(this->root) == NULL) {
+            node *newNode = new node;
+            newNode->key_value = key;
+            newNode->left = NULL;
+            newNode->right = NULL;
+            TM_WRITE(this->root, newNode);
+
+            firstNode = true;
+
         }
     }
+    TM_END;
+    
+    if(!firstNode)
+        add(key, this->root);
+}*/
 
-
-
-
-    int size() {
-        PaVTNode* n = (PaVTNode*) root->left;
-        return size(n);
+//deletion bottom up
+void btree::destroy_tree(node *leaf)
+{
+    if (leaf != NULL)
+    {
+        destroy_tree(leaf->left);
+        destroy_tree(leaf->right);
+        delete leaf;
     }
+}
 
-    int size(PaVTNode* n) {
-        if (n == NULL) return 0;
-        return 1 + size((PaVTNode*) n->left) +  size((PaVTNode*) n->right);
-    }
+class Dummy
+{
 
-
-};//PaVTree
-
-
-class Dummy{
-
-
-
-public:
-    void add( int val ) {
-
+  public:
+    void add(int val)
+    {
 
         printf("dummy %d \n", val);
-
-
-
-
     }
-
-
-
 };
 
 
 
+class TestCase
+{
 
-
-
-class TestCase{
-
-
-
-public:
+  public:
     int n;
-    PaVTBST* tree = new PaVTBST(-1500000000,1500000000);
- //   Dummy* tree = new Dummy();
-    int* array ;
+    btree *tree = new btree();
+
+    //   Dummy* tree = new Dummy();
+    int *array;
     int nThreads;
-    TestCase(int n, int nThreads ){
-        this->n = n ;
+    int percAdd, percRemove, percContains;
+    
+    struct op {
+        char type; // C - contains/ R- remove/ A - add
+        int arg; // value to be added or removed
+    };
+
+    list<op> *createOpList(int numOperations) {
+        list<op> *newList = new list<op>();
+
+        for (int i = 0; i < numOperations; i++) {
+            newList->push_back(*createOpRandomly());
+        }
+
+        return newList;
+    } 
+    op* createOpRandomly() {
+        int randNum = rand() % 100;
+
+        char operation = 'A';
+        if (randNum < percAdd) {
+            operation = 'A';
+        }
+        else if (randNum < percAdd + percContains) {
+            operation = 'C';
+        }
+        else {
+            operation = 'R';
+
+        }
+        
+        op* o = new op {
+            operation,
+            rand()%n
+        };
+        
+        return o;
+    }
+
+    TestCase(int numElements, int nThreads, int percAdd, int percRemove, int percContains)
+    {
+        this->n = numElements;
         this->nThreads = nThreads;
+        this->percAdd = percAdd;
+        this->percRemove = percRemove;
+        this->percContains = percContains;
+
         array = new int[n];
-        srand (time(NULL));
+        srand(time(NULL));
         populateArray();
+        
     }
 
-    ~TestCase(){
-        tree->deleteNodes();
-        delete array;
-
+    void run2() {
+        thread workers[nThreads];
+        int size = n / nThreads;
+        
+        list<op>* opList[nThreads];
+        for(int i =0 ;i < nThreads; i++) {
+            opList[i] = createOpList(size);
+        }
+        
+        for(int i = 0 ;i < nThreads; i++) {
+            workers[i] = thread(&TestCase::work, this, tree, opList[i]);
+        }
+        
+        for(int i = 0; i < nThreads; i++) {
+            workers[i].join();
+        }
 
     }
+    // ~TestCase(){
+    //     tree->deleteNodes();
+    //     delete array;
 
+    // }
 
-    void populateArray(){
+    void populateArray()
+    {
 
-        for( int i = 0; i < n; i++ ){
+        for (int i = 0; i < n; i++)
+        {
             array[i] = i;
 
             //printf("%d, ", array[i]);
-
         }
-      //  int k = 0 ;
-        for( int i = 0; i < n; i++ ){
+        //  int k = 0 ;
+        for (int i = 0; i < n; i++)
+        {
 
             int tmp = array[i];
-            int r = rand()%n;
+            int r = rand() % n;
             array[i] = array[r];
             array[r] = tmp;
+        }
 
-          }
+        //for( int i = 0; i < n; i++ ){
 
-    //for( int i = 0; i < n; i++ ){
+        //     printf("%d, ", array[i]);
 
-      //     printf("%d, ", array[i]);
+        // }
 
-         // }
-
-
-           //printf("\n");
+        //printf("\n");
     }
-    void adder(PaVTBST* tree ,int* array, int begin, int end){
+
+    void populateTree() {
+        for (int i = 0; i < n/2; i++) {
+            tree->add(rand()%n);
+        }
+    }
+
+    void printList(list<op> *listOps) {
+        for(list<op>::iterator it = listOps->begin(); it != listOps->end(); ++it ) {
+            printf("%c - %d, ", it->type, it->arg);
+        }
+
+        printf("\n");
+    }
+    void work(btree *tree, list<op> *listOps) {
+        //printList(listOps);
+        
+        TM_THREAD_INIT();
+        for(list<op>::iterator it = listOps->begin(); it != listOps->end(); ++it ) {
+            //printf("%p tree \n", tree);
+            //printf("%c - %d, ", it->type, it->arg);
+
+            if (it->type == 'A') {
+                tree->add(it->arg);
+ 
+            }
+            else if (it->type == 'R') {
+                //tree->remove(it->arg); 
+            }
+            else { //contains
+                //tree->contains(it->arg);
+            }
+        }
+        TM_THREAD_SHUTDOWN();
+
+        
+    }
+    void adder(btree *tree, int *array, int begin, int end)
+    {
         // printf("%d, %d\n", begin, end);
-    
+
         // init thread for rstm
         TM_THREAD_INIT();
 
-        while(begin < end) {
+        while (begin < end)
+        {
             printlocked("adding\n");
             tree->add(array[begin]);
 
             begin++;
         }
+        TM_THREAD_SHUTDOWN();
     }
-    void remover(PaVTBST* tree ,int* array, int begin, int end){
-         //printf("%d, %d\n", begin, end);
+    void remover(btree *tree, int *array, int begin, int end)
+    {
+        //printf("%d, %d\n", begin, end);
+        TM_THREAD_INIT();
 
-        while(begin < end) {
+        while (begin < end)
+        {
 
             printlocked("removing\n");
+            
+            while(!tree->remove(array[begin]))
+                ;//printf("trying to remove %d \n", array[begin]);
+            
 
-            while(tree->remove(array[begin])==tree->invalidNumber)
-                ;
-
+            //tree->remove(array[begin]);
             begin++;
         }
+        TM_THREAD_SHUTDOWN();
     }
-    void run(){
-
-
+    void run()
+    {
+        
         thread workersAdd[nThreads];
-        int size = n/nThreads;
-        for (int i=0; i<nThreads; i++) {
+        int size = n / nThreads;
+        for (int i = 0; i < nThreads; i++)
+        {
 
-            workersAdd[i] = thread(&TestCase::adder, this, tree , array, i*size, (i+1)*size);
+            workersAdd[i] = thread(&TestCase::adder, this, tree, array, i * size, (i + 1) * size);
         }
-
-        //tree->inorderPrint();
-
-        //printf("size: %d\n",tree->size()) ;
-
-
-        thread workersRemove[nThreads];
-
-        for (int i=0; i<nThreads; i++) {
-
-            workersRemove[i] = thread(&TestCase::remover, this, tree , array, i*size, (i+1)*size);
-        }
-        for (int i=0; i<nThreads; i++){
+        for (int i = 0; i < nThreads; i++)
+        {
             workersAdd[i].join();
         }
+        
 
+        printf("size before remove: %d\n",tree->size()) ;
+        printf("starting removals\n\n");
 
-        for (int i=0; i<nThreads; i++){
+//        return;
+        thread workersRemove[nThreads];
+/*        workersRemove[0] = thread(&TestCase::remover, this, tree, array, 0, n+1);
+        workersRemove[0].join();
+  */      
+        
+        
+        for (int i = 0; i < nThreads; i++)
+        {
+
+            workersRemove[i] = thread(&TestCase::remover, this, tree, array, i * size, (i + 1) * size);
+        }
+        
+    
+        for (int i = 0; i < nThreads; i++)
+        {
             workersRemove[i].join();
         }
-
-        tree->inorderPrint();
-        printf("size: %d\n",tree->size()) ;
-
-
-
-
-    }//run
-
-
-
-
-
-
+        
+        //tree->inorderPrint();
+        printf("size after removals: %d\n", tree->size());
+    
+    } //run
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Config::Config() :
-    bmname(""),
-    duration(1),
-    execute(0),
-    threads(THREAD_COUNT),
-    nops_after_tx(0),
-    elements(256),
-    lookpct(34),
-    inspct(66),
-    sets(1),
-    ops(1),
-    time(0),
-    running(true),
-    txcount(0)
-{
-}
-
-Config CFG TM_ALIGN(64);
 
 /*
 void* run_thread(void* i) {
@@ -852,22 +690,29 @@ int main(int argc, char** argv) {
     return 0;
 }*/
 
-int main(int agrc, char**argv){
+int main(int agrc, char **argv)
+{
+    
     TM_SYS_INIT();
 
     // original thread must be initalized also
     TM_THREAD_INIT();
 
     int i = 10;
+    const int nThreads = 4;
 
-   while(i<=64){
-        int elements = 100000*i;
-        printf("Test with %d threads - %d\n", i, elements );
-        TestCase test = TestCase(elements,i);
-        test.run();
+    //while (i <= 64)
+    //{
+        int elements = 1000;
+        printf("Test with %d threads - %d\n", nThreads, elements);
+        TestCase test = TestCase(elements, nThreads, 25, 25, 50);
+        test.run2();
 
-        i++;
-    }
+      //  i++;
+    //}
 
+    printf("new\n");
+    TM_THREAD_SHUTDOWN();
+    TM_SYS_SHUTDOWN();
     return 0;
 }
