@@ -3,6 +3,9 @@
 #include <signal.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <fstream>
+#include <chrono> 
+
 #include <api/api.hpp>
 #include <common/platform.hpp>
 #include <common/locks.hpp>
@@ -30,6 +33,7 @@
     for (int ___ct = 0; ___ct++ < 1; m.unlock())
 
 using namespace std;
+using namespace std::chrono; 
 
 
 
@@ -412,7 +416,9 @@ class TestCase
     int *array;
     int nThreads;
     int percAdd, percRemove, percContains;
-    
+    int transactionSize;
+    char *filename;
+
     struct op {
         char type; // C - contains/ R- remove/ A - add
         int arg; // value to be added or removed
@@ -450,14 +456,16 @@ class TestCase
         return o;
     }
 
-    TestCase(int numElements, int nThreads, int percAdd, int percRemove, int percContains)
+    TestCase(char* filename, int numElements, int nThreads, int percAdd, int percRemove, int percContains, int transactionSize)
     {
+        this->filename = filename;
         this->n = numElements;
         this->nThreads = nThreads;
         this->percAdd = percAdd;
         this->percRemove = percRemove;
         this->percContains = percContains;
 
+        this->transactionSize = transactionSize;
         array = new int[n];
         srand(time(NULL));
         populateArray();
@@ -473,21 +481,35 @@ class TestCase
             opList[i] = createOpList(size);
         }
         
+        auto start = high_resolution_clock::now(); 
+
         for(int i = 0 ;i < nThreads; i++) {
             workers[i] = thread(&TestCase::work, this, tree, opList[i]);
         }
         
         for(int i = 0; i < nThreads; i++) {
             workers[i].join();
-        }
-        printf("Tree size: %d\n", tree->size());
+         }
+        auto stop = high_resolution_clock::now(); 
+        auto duration = duration_cast<microseconds>(stop - start); 
+
+
+        //printf("Tree size: %d\n", tree->size());
+
+        outputToFile(filename, duration.count(),
+                     this->n, 
+                     this->nThreads,
+                     this->percAdd,
+                     this->percRemove,
+                     this->percContains, 
+                     1);
     }
     // ~TestCase(){
     //     tree->deleteNodes();
     //     delete array;
 
     // }
-
+//
     void populateArray()
     {
 
@@ -588,7 +610,32 @@ class TestCase
         }
         TM_THREAD_SHUTDOWN();
     }
-    void run()
+
+
+    void outputToFile(char* filename, int64_t duration,
+                        int elements, int nThreads,
+                        int percAdd,
+                        int percRemove,
+                        int percContains, 
+                        int transactionSize) {
+        char *delimiter = ", ";
+
+        ofstream outfile;
+        outfile.open(filename, ios_base::app);
+        outfile << duration << delimiter;
+        outfile << elements << delimiter;
+        outfile << nThreads << delimiter;
+        
+        outfile << percAdd << delimiter;
+        outfile << percRemove << delimiter;
+        outfile << percContains<< delimiter;
+
+        
+        outfile << transactionSize << delimiter;
+
+        outfile << endl;
+    }
+    void run() 
     {
         
         thread workersAdd[nThreads];
@@ -655,68 +702,35 @@ void* run_thread(void* i) {
 }
 
 */
-/*
-int main(int argc, char** argv) {
-    printf("hello world\n");
-    TM_SYS_INIT();
 
-    // original thread must be initalized also
-    TM_THREAD_INIT();
-
-    void* args[256];
-    pthread_t tid[256];
-
-    // set up configuration structs for the threads we'll create
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
-    for (uint32_t i = 0; i < CFG.threads; i++)
-        args[i] = (void*)i;
-
-    // actually create the threads
-    for (uint32_t j = 1; j < CFG.threads; j++)
-        pthread_create(&tid[j], &attr, &run_thread, args[j]);
-
-    // all of the other threads should be queued up, waiting to run the
-    // benchmark, but they can't until this thread starts the benchmark
-    // too...
-    run_thread(args[0]);
-
-    // everyone should be done.  Join all threads so we don't leave anything
-    // hanging around
-    for (uint32_t k = 1; k < CFG.threads; k++)
-        pthread_join(tid[k], NULL);
-
-    // And call sys shutdown stuff
-    TM_SYS_SHUTDOWN();
-
-    printf("x = %d\n", x); // x should equal (THREAD_COUNT * NUM_TRANSACTIONS)
-
-    return 0;
-}*/
-
-int main(int agrc, char **argv)
+int main(int argc, char **argv)
 {
+    if (argc < 8) {
+        printf("insufficient arguments\n");
+        return 1;
+    }
     
-    TM_SYS_INIT();
+    // num elements
+    int numElements = atoi(argv[1]);
+    // num threads
+    int numThreads = atoi(argv[2]);
+    // percAdd
+    int percAdd = atoi(argv[3]);
+    //percRemove
+    int percRemove = atoi(argv[4]);
+    // percContains
+    int percContains = atoi(argv[5]);
+    //trans size
+    int transactionSize = atoi(argv[6]);
+    //output filename
+    char *fname = argv[7];
 
-    // original thread must be initalized also
+    TM_SYS_INIT();
     TM_THREAD_INIT();
 
-    int i = 10;
-    const int nThreads = 4;
+    TestCase test = TestCase(fname, numElements, numThreads, percAdd, percRemove, percContains, transactionSize);
+    test.run2();
 
-    //while (i <= 64)
-    //{
-        int elements = 1000000;
-        printf("Test with %d threads - %d\n", nThreads, elements);
-        TestCase test = TestCase(elements, nThreads, 25, 25, 50);
-        test.run2();
-
-      //  i++;
-    //}
-
-    printf("new\n");
     TM_THREAD_SHUTDOWN();
     TM_SYS_SHUTDOWN();
     return 0;
