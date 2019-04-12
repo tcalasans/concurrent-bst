@@ -5,6 +5,13 @@
 #include <stdio.h>
 #include <mutex>
 #include <thread>
+#include <fstream>
+#include <chrono> 
+#include <list> 
+#include <iterator> 
+
+
+#include <time.h>
 
 #define SILENT
 
@@ -12,6 +19,7 @@
 #define synchronized(m) \
     m.lock(); for(int ___ct=0 ; ___ct++<1 ; m.unlock() )
 using namespace std;
+using namespace std::chrono; 
 
 
 mutex printlock;
@@ -578,11 +586,206 @@ public:
 };
 
 
+class TestCase
+{
+
+  public:
+    int n;
+    PaVTBST* tree = new PaVTBST(-1500000000,1500000000);
+
+    //   Dummy* tree = new Dummy();
+    int *array;
+    int nThreads;
+    int percAdd, percRemove, percContains;
+    int transactionSize;
+    char *filename;
+
+    struct op {
+        char type; // C - contains/ R- remove/ A - add
+        int arg; // value to be added or removed
+    };
+
+    list<op*> *createOpList(int numOperations) {
+        list<op*> *newList = new list<op*>();
+
+        for (int i = 0; i < numOperations; i++) {
+            newList->push_back(createOpRandomly());
+        }
+
+        return newList;
+    } 
+    op* createOpRandomly() {
+        int randNum = rand() % 100;
+
+        char operation = 'A';
+        if (randNum < percAdd) {
+            operation = 'A';
+        }
+        else if (randNum < percAdd + percContains) {
+            operation = 'C';
+        }
+        else {
+            operation = 'R';
+
+        }
+        
+        op* o = new op {
+            operation,
+            rand()%n
+        };
+        
+        return o;
+    }
+
+    TestCase(char* filename, int numElements, int nThreads, int percAdd, int percRemove, int percContains, int transactionSize)
+    {
+        this->filename = filename;
+        this->n = numElements;
+        this->nThreads = nThreads;
+        this->percAdd = percAdd;
+        this->percRemove = percRemove;
+        this->percContains = percContains;
+
+        this->transactionSize = transactionSize;
+        array = new int[n];
+        srand(time(NULL));
+        populateArray();
+        
+    }
+
+    void run2() {
+        thread workers[nThreads];
+        int size = n / nThreads;
+        
+        list<op*>* opList[nThreads];
+        for(int i =0 ;i < nThreads; i++) {
+            opList[i] = createOpList(size);
+        }
+        
+        auto start = high_resolution_clock::now(); 
+
+        for(int i = 0 ;i < nThreads; i++) {
+            workers[i] = thread(&TestCase::work, this, tree, opList[i]);
+        }
+        
+        for(int i = 0; i < nThreads; i++) {
+            workers[i].join();
+         }
+        auto stop = high_resolution_clock::now(); 
+        auto duration = duration_cast<microseconds>(stop - start); 
+
+
+        //printf("Tree size: %d\n", tree->size());
+
+        outputToFile(filename, duration.count(),
+                     this->n, 
+                     this->nThreads,
+                     this->percAdd,
+                     this->percRemove,
+                     this->percContains, 
+                     1);
+    }
+    // ~TestCase(){
+    //     tree->deleteNodes();
+    //     delete array;
+
+    // }
+//
+    void populateArray()
+    {
+
+        for (int i = 0; i < n; i++)
+        {
+            array[i] = i;
+
+            //printf("%d, ", array[i]);
+        }
+        //  int k = 0 ;
+        for (int i = 0; i < n; i++)
+        {
+
+            int tmp = array[i];
+            int r = rand() % n;
+            array[i] = array[r];
+            array[r] = tmp;
+        }
+
+        //for( int i = 0; i < n; i++ ){
+
+        //     printf("%d, ", array[i]);
+
+        // }
+
+        //printf("\n");
+    }
+
+    void populateTree() {
+        for (int i = 0; i < n/2; i++) {
+            tree->add(rand()%n);
+        }
+    }
+
+    void printList(list<op> *listOps) {
+        for(list<op>::iterator it = listOps->begin(); it != listOps->end(); ++it ) {
+            printf("%c - %d, ", it->type, it->arg);
+        }
+
+        printf("\n");
+    }
+    void work(PaVTBST *tree, list<op*> *listOps) {
+        //printList(listOps);
+        
+        
+        for(list<op*>::iterator it = listOps->begin(); it != listOps->end(); ++it ) {
+            //printf("%p tree \n", tree);
+            //printf("%c - %d, ", it->type, it->arg);
+            op *operaton = *it;
+            if (operaton->type == 'A') {
+                tree->add(operaton->arg);
+ 
+            }
+            else if (operaton->type == 'R') {
+                tree->remove(operaton->arg); 
+            }
+            else { //contains
+                tree->contains(operaton->arg);
+            }
+        }
+        
+
+        
+    }
+
+    void outputToFile(char* filename, int64_t duration,
+                        int elements, int nThreads,
+                        int percAdd,
+                        int percRemove,
+                        int percContains, 
+                        int transactionSize) {
+        char *delimiter = ", ";
+
+        ofstream outfile;
+        outfile.open(filename, ios_base::app);
+        outfile << duration << delimiter;
+        outfile << elements << delimiter;
+        outfile << nThreads << delimiter;
+        
+        outfile << percAdd << delimiter;
+        outfile << percRemove << delimiter;
+        outfile << percContains<< delimiter;
+
+        
+        outfile << transactionSize << delimiter;
+
+        outfile << endl;
+    }
+};
 
 
 
 
-class TestCase{
+/*
+class TestCase_OLD{
 
 
 
@@ -592,7 +795,7 @@ public:
  //   Dummy* tree = new Dummy();
     int* array ;
     int nThreads;
-    TestCase(int n, int nThreads ){
+    TestCase_OLD(int n, int nThreads ){
         this->n = n ;
         this->nThreads = nThreads;
         array = new int[n];
@@ -600,7 +803,7 @@ public:
         populateArray();
     }
 
-    ~TestCase(){
+    ~TestCase_OLD(){
         tree->deleteNodes();
         delete array;
 
@@ -702,10 +905,39 @@ public:
 
 
 };
+*/
+
+int main(int argc, char **argv)
+{
+    if (argc < 8) {
+        printf("insufficient arguments\n");
+        return 1;
+    }
+    
+    // num elements
+    int numElements = atoi(argv[1]);
+    // num threads
+    int numThreads = atoi(argv[2]);
+    // percAdd
+    int percAdd = atoi(argv[3]);
+    //percRemove
+    int percRemove = atoi(argv[4]);
+    // percContains
+    int percContains = atoi(argv[5]);
+    //trans size
+    int transactionSize = atoi(argv[6]);
+    //output filename
+    char *fname = argv[7];
+
+    TestCase test = TestCase(fname, numElements, numThreads, percAdd, percRemove, percContains, transactionSize);
+    test.run2();
+
+    return 0;
+}
 
 
-
-int main(int agrc, char**argv){
+/*
+int main_OLD(int agrc, char**argv){
 
     int i = 10;
 
@@ -718,7 +950,7 @@ int main(int agrc, char**argv){
 
     i++;
     }
-    /*
+    
     int array [] = {4,9,12,3,2,1,-10,18,59,43,7,14};
     PaVTBST tree = PaVTBST(-98,5555);
     for(int i= 0; i<12 ; i++){
@@ -738,7 +970,7 @@ int main(int agrc, char**argv){
     tree.inorderPrint();
 
 
-*/
+
 
     return 0;
-}
+}*/
