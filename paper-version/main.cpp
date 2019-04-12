@@ -16,8 +16,6 @@
 #define SILENT
 
 
-#define synchronized(m) \
-    m.lock(); for(int ___ct=0 ; ___ct++<1 ; m.unlock() )
 using namespace std;
 using namespace std::chrono; 
 
@@ -73,14 +71,6 @@ mutex printlock;
             this->leftSnapshot = leftSnapshot;
             this->rightSnapshot = rightSnapshot;
         }
-
-/*
-        String toString() {
-            String delimiter = "  ";
-            //StringBuilder sb = new StringBuilder();
-            return sb.append(value + (marked? "(marked)" : "") + delimiter).toString();
-        }
-*/
     };//PaVTNode
 
 
@@ -144,38 +134,36 @@ public:
                 return val;
             }
             bool leftLast = val < node->value ;
-          //  node->m_mutex.lock();
-             //printf("adding inside add before mutex \n");
-             //fflush(stdout);
-           synchronized(node->m_mutex) {
+          
+            node->m_mutex.lock();
 
-                if (node->marked || (leftLast && node->left != NULL) || (!leftLast && node->right != NULL)) {
-                    node->m_mutex.unlock();
-                    continue;
-                }
-                PaVTNode* upperNode = leftLast? (PaVTNode*) node->leftSnapshot : (PaVTNode*) node->rightSnapshot;
-                if ((leftLast && (val <= upperNode->value)) ||
-                        (!leftLast && (val >= upperNode->value)
-                                )) {
-                    node->m_mutex.unlock();
-                    continue;
-                }
-                PaVTNode* newNode = new PaVTNode(val, node, val > node->value ? node : upperNode, res > 0? upperNode : node);
+            if (node->marked || (leftLast && node->left != NULL) || (!leftLast && node->right != NULL)) {
+                node->m_mutex.unlock();
+                continue;
+            }
+            PaVTNode* upperNode = leftLast? (PaVTNode*) node->leftSnapshot : (PaVTNode*) node->rightSnapshot;
+            if ((leftLast && (val <= upperNode->value)) ||
+                    (!leftLast && (val >= upperNode->value)
+                            )) {
+                node->m_mutex.unlock();
+                continue;
+            }
+            PaVTNode* newNode = new PaVTNode(val, node, val > node->value ? node : upperNode, res > 0? upperNode : node);
 
-                if (!leftLast) {
-                    upperNode->leftSnapshot = newNode;
-                    node->rightSnapshot = newNode;
-                    node->right = newNode;
-                    node->m_mutex.unlock();
-                    return invalidNumber;
-                }
-                upperNode->rightSnapshot = newNode;
-                node->leftSnapshot = newNode;
-                node->left = newNode;
+            if (!leftLast) {
+                upperNode->leftSnapshot = newNode;
+                node->rightSnapshot = newNode;
+                node->right = newNode;
                 node->m_mutex.unlock();
                 return invalidNumber;
-           }
-         //   node->m_mutex.unlock();
+            }
+            upperNode->rightSnapshot = newNode;
+            node->leftSnapshot = newNode;
+            node->left = newNode;
+            
+            node->m_mutex.unlock();
+            return invalidNumber;
+           
         }
     }
 
@@ -685,12 +673,6 @@ class TestCase
                      this->percContains, 
                      1);
     }
-    // ~TestCase(){
-    //     tree->deleteNodes();
-    //     delete array;
-
-    // }
-//
     void populateArray()
     {
 
@@ -700,7 +682,7 @@ class TestCase
 
             //printf("%d, ", array[i]);
         }
-        //  int k = 0 ;
+        
         for (int i = 0; i < n; i++)
         {
 
@@ -709,14 +691,6 @@ class TestCase
             array[i] = array[r];
             array[r] = tmp;
         }
-
-        //for( int i = 0; i < n; i++ ){
-
-        //     printf("%d, ", array[i]);
-
-        // }
-
-        //printf("\n");
     }
 
     void populateTree() {
@@ -784,128 +758,7 @@ class TestCase
 
 
 
-/*
-class TestCase_OLD{
 
-
-
-public:
-    int n;
-    PaVTBST* tree = new PaVTBST(-1500000000,1500000000);
- //   Dummy* tree = new Dummy();
-    int* array ;
-    int nThreads;
-    TestCase_OLD(int n, int nThreads ){
-        this->n = n ;
-        this->nThreads = nThreads;
-        array = new int[n];
-        srand (time(NULL));
-        populateArray();
-    }
-
-    ~TestCase_OLD(){
-        tree->deleteNodes();
-        delete array;
-
-
-    }
-
-
-    void populateArray(){
-
-        for( int i = 0; i < n; i++ ){
-            array[i] = i;
-
-            //printf("%d, ", array[i]);
-
-        }
-      //  int k = 0 ;
-        for( int i = 0; i < n; i++ ){
-
-            int tmp = array[i];
-            int r = rand()%n;
-            array[i] = array[r];
-            array[r] = tmp;
-
-          }
-
-    //for( int i = 0; i < n; i++ ){
-
-      //     printf("%d, ", array[i]);
-
-         // }
-
-
-           //printf("\n");
-    }
-    void adder(PaVTBST* tree ,int* array, int begin, int end){
-        // printf("%d, %d\n", begin, end);
-
-        while(begin < end) {
-            printlocked("adding\n");
-            tree->add(array[begin]);
-
-            begin++;
-        }
-    }
-    void remover(PaVTBST* tree ,int* array, int begin, int end){
-         //printf("%d, %d\n", begin, end);
-
-        while(begin < end) {
-
-            printlocked("removing\n");
-
-            while(tree->remove(array[begin])==tree->invalidNumber)
-                ;
-
-            begin++;
-        }
-    }
-    void run(){
-
-
-        thread workersAdd[nThreads];
-        int size = n/nThreads;
-        for (int i=0; i<nThreads; i++) {
-
-            workersAdd[i] = thread(&TestCase::adder, this, tree , array, i*size, (i+1)*size);
-        }
-
-        //tree->inorderPrint();
-
-        //printf("size: %d\n",tree->size()) ;
-
-
-        thread workersRemove[nThreads];
-
-        for (int i=0; i<nThreads; i++) {
-
-            workersRemove[i] = thread(&TestCase::remover, this, tree , array, i*size, (i+1)*size);
-        }
-        for (int i=0; i<nThreads; i++){
-            workersAdd[i].join();
-        }
-
-
-        for (int i=0; i<nThreads; i++){
-            workersRemove[i].join();
-        }
-
-        tree->inorderPrint();
-        printf("size: %d\n",tree->size()) ;
-
-
-
-
-    }//run
-
-
-
-
-
-
-};
-*/
 
 int main(int argc, char **argv)
 {
@@ -935,42 +788,3 @@ int main(int argc, char **argv)
     return 0;
 }
 
-
-/*
-int main_OLD(int agrc, char**argv){
-
-    int i = 10;
-
-   while(i<=64){
-        int elements = 100000*i;
-        printf("Test with %d threads - %d\n", i, elements );
-        TestCase test = TestCase(elements,i);
-        test.run();
-       // delete test;
-
-    i++;
-    }
-    
-    int array [] = {4,9,12,3,2,1,-10,18,59,43,7,14};
-    PaVTBST tree = PaVTBST(-98,5555);
-    for(int i= 0; i<12 ; i++){
-        tree.add(array[i]);
-    }
-
-
-    tree.inorderPrint();
-
-    for(int i= 0; i<12 ; i++){
-       // tree.remove(array[i]);
-        //printf("Removing %d ", array[i] );
-        //tree.inorderPrint();
-    }
-
-
-    tree.inorderPrint();
-
-
-
-
-    return 0;
-}*/
