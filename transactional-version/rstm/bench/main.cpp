@@ -59,6 +59,26 @@ Config::Config() : bmname(""),
 
 Config CFG TM_ALIGN(64);
 
+void setConfigRSTM(Config &cfg,
+               int numThreads, 
+               int elements, 
+               int lookpct, 
+               int inspct, 
+               int transactionSize) {
+    cfg.bmname = "";
+    cfg.duration = 1;
+    cfg.execute = 2;
+    cfg.threads = numThreads;
+    cfg.nops_after_tx = 0;
+    cfg.elements = elements;
+    cfg.lookpct = lookpct;
+    cfg.inspct = inspct;
+    cfg.sets = 10;
+    cfg.ops = transactionSize;
+    cfg.time = 0;
+    cfg.running = true;
+    
+}
 
 // shared variable that will be incremented by transactions
 int x = 0;
@@ -501,8 +521,8 @@ class TestCase
                      this->nThreads,
                      this->percAdd,
                      this->percRemove,
-                     this->percContains, 
-                     1);
+                     this->percContains,
+                     this->transactionSize);
     }
     // ~TestCase(){
     //     tree->deleteNodes();
@@ -724,6 +744,8 @@ int main(int argc, char **argv)
     int transactionSize = atoi(argv[6]);
     //output filename
     char *fname = argv[7];
+
+    setConfigRSTM(CFG, numThreads, numElements, percContains, percAdd+percRemove, transactionSize);
 
     TM_SYS_INIT();
     TM_THREAD_INIT();

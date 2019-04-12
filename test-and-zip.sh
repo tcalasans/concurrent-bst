@@ -11,5 +11,6 @@ mkdir output-dir
 cp ./paper-version/paper-output.csv ./output-dir
 cp ./transactional-version/transaction-output.csv ./output-dir
 
+rm output.zip
 zip -r output.zip ./output-dir
 rm -r ./output-dir
